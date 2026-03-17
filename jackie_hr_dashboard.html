@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jackie Herrera — HR Dashboard</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #ededea;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9c9a92;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --success-bg: #eaf3de;
+    --success-text: #3b6d11;
+    --warning-bg: #faeeda;
+    --warning-text: #854f0b;
+    --danger-bg: #fcebeb;
+    --danger-text: #a32d2d;
+    --info-bg: #e6f1fb;
+    --info-text: #185fa5;
+    --info-border: #378add;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg2: #2a2a27;
+      --bg3: #333330;
+      --text: #e8e6de;
+      --text2: #a8a69e;
+      --text3: #6e6c65;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --success-bg: #173404;
+      --success-text: #c0dd97;
+      --warning-bg: #412402;
+      --warning-text: #fac775;
+      --danger-bg: #501313;
+      --danger-text: #f7c1c1;
+      --info-bg: #042c53;
+      --info-text: #b5d4f4;
+      --info-border: #185fa5;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg3); color: var(--text); font-size: 14px; min-height: 100vh; }
+  .page { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+
+  /* Header */
+  .header-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
+  .name-block h1 { font-size: 22px; font-weight: 500; }
+  .name-block p { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .date-badge { font-size: 12px; color: var(--text2); background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 4px 12px; }
+
+  /* Metrics */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .metric { background: var(--bg2); border-radius: var(--radius); padding: 0.9rem 1rem; }
+  .metric-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .metric-value { font-size: 24px; font-weight: 500; }
+  .metric-value.green { color: var(--success-text); }
+  .metric-value.amber { color: var(--warning-text); }
+  .metric-value.blue { color: var(--info-text); }
+
+  /* Section title */
+  .section-title { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+
+  /* Card */
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+
+  /* Tasks */
+  .task-item { padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .task-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .task-row { display: flex; align-items: flex-start; gap: 10px; }
+  .task-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border2); cursor: pointer; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, border-color 0.2s; }
+  .task-check.done { background: var(--success-bg); border-color: var(--success-text); }
+  .task-check.done::after { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--success-text); }
+  .task-body { flex: 1; }
+  .task-title { font-size: 14px; font-weight: 500; }
+  .task-title.done { text-decoration: line-through; color: var(--text3); }
+  .task-meta { display: flex; gap: 6px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 500; }
+  .tag.priority-high { background: var(--danger-bg); color: var(--danger-text); }
+  .tag.priority-med { background: var(--warning-bg); color: var(--warning-text); }
+  .tag.priority-low { background: var(--bg2); color: var(--text2); }
+  .tag.cat { background: var(--info-bg); color: var(--info-text); }
+  .tag.own-payroll { background: var(--success-bg); color: var(--success-text); }
+  .tag.own-conf { background: var(--warning-bg); color: var(--warning-text); }
+  .progress-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .progress-track { flex: 1; height: 4px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
+  .progress-fill.green { background: var(--success-text); }
+  .progress-fill.amber { background: var(--warning-text); }
+  .progress-fill.blue { background: var(--info-text); }
+  .prog-input { width: 50px; font-size: 12px; padding: 2px 6px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); text-align: center; font-family: inherit; }
+  .prog-input:focus { outline: none; border-color: var(--info-border); }
+  .notes-toggle { font-size: 12px; color: var(--info-text); cursor: pointer; margin-top: 4px; display: inline-block; user-select: none; }
+  .task-notes { margin-top: 8px; display: none; }
+  .task-notes.open { display: block; }
+  .task-notes textarea { width: 100%; font-size: 13px; padding: 8px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); resize: vertical; min-height: 64px; font-family: inherit; line-height: 1.5; }
+  .task-notes textarea:focus { outline: none; border-color: var(--info-border); }
+  .remove-btn { font-size: 18px; color: var(--text3); cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0; }
+  .remove-btn:hover { color: var(--danger-text); }
+
+  /* Add row */
+  .add-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .add-row input, .add-row select { font-size: 13px; padding: 6px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); font-family: inherit; }
+  .add-row input { flex: 1; min-width: 140px; }
+  .add-row input:focus, .add-row select:focus { outline: none; border-color: var(--info-border); }
+  .add-btn { font-size: 13px; padding: 6px 16px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .add-btn:hover { background: var(--bg2); }
+
+  /* Divider */
+  .divider { height: 0.5px; background: var(--border); margin: 1.5rem 0; }
+
+  /* Two col */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 620px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Calendar */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-nav button { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 4px 12px; cursor: pointer; font-size: 14px; color: var(--text); font-family: inherit; }
+  .cal-nav button:hover { background: var(--bg2); }
+  .cal-month { font-size: 15px; font-weight: 500; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-dow { font-size: 11px; color: var(--text2); text-align: center; padding: 4px 0; font-weight: 500; }
+  .cal-day { min-height: 44px; border-radius: var(--radius); padding: 4px 5px; border: 0.5px solid transparent; }
+  .cal-day.other-month .day-num { color: var(--text3); }
+  .cal-day.today { border-color: var(--info-border); }
+  .cal-day.today .day-num { color: var(--info-text); font-weight: 500; }
+  .cal-day.has-payroll { background: var(--success-bg); cursor: pointer; }
+  .cal-day.has-deadline { background: var(--warning-bg); cursor: pointer; }
+  .cal-day.has-payroll.has-deadline { background: var(--warning-bg); }
+  .day-num { font-size: 12px; }
+  .day-dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 2px; }
+  .dot-payroll { background: var(--success-text); }
+  .dot-deadline { background: var(--warning-text); }
+  .cal-legend { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .cal-detail { margin-top: 12px; min-height: 32px; }
+  .cal-detail-hint { font-size: 12px; color: var(--text3); }
+  .cal-detail-date { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .cal-detail-item { font-size: 13px; padding: 6px 0; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .cal-detail-item:last-child { border-bottom: none; }
+
+  /* Goals */
+  .goal-item { padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .goal-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .goal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .goal-title { font-size: 14px; font-weight: 500; }
+  .goal-due { font-size: 11px; color: var(--text2); white-space: nowrap; background: var(--bg2); border-radius: 999px; padding: 2px 8px; }
+  .goal-desc { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+
+  /* Role snapshot */
+  .snapshot-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; color: var(--text2); }
+  .snapshot-row:last-of-type { border-bottom: none; }
+  .snapshot-val { color: var(--text); }
+  .ownership-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header-top">
+    <div class="name-block">
+      <h1>Jackie Herrera — HR Dashboard</h1>
+      <p>HR & Intern Coordinator · MyAiPathways (MAP)</p>
+    </div>
+    <span class="date-badge" id="today-date"></span>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Tasks total</div><div class="metric-value blue" id="met-total">0</div></div>
+    <div class="metric"><div class="metric-label">Completed</div><div class="metric-value green" id="met-done">0</div></div>
+    <div class="metric"><div class="metric-label">In progress</div><div class="metric-value amber" id="met-prog">0</div></div>
+    <div class="metric"><div class="metric-label">Hours / week</div><div class="metric-value">10–15</div></div>
+  </div>
+
+  <!-- Tasks -->
+  <div class="section-title">Active tasks</div>
+  <div class="card" id="task-list"></div>
+  <div class="add-row">
+    <input type="text" id="new-task-input" placeholder="Task name..." />
+    <select id="new-task-own">
+      <option value="cat|General">General</option>
+      <option value="own-payroll|Payroll Research">Payroll Research</option>
+      <option value="own-conf|Confidentiality Agreements">Confidentiality Agreements</option>
+      <option value="cat|Intake funnel">Intake funnel</option>
+      <option value="cat|Onboarding">Onboarding</option>
+      <option value="cat|Communications">Communications</option>
+      <option value="cat|Intern coordination">Intern coordination</option>
+    </select>
+    <select id="new-task-prio">
+      <option value="high">High priority</option>
+      <option value="med" selected>Medium priority</option>
+      <option value="low">Low priority</option>
+    </select>
+    <button class="add-btn" onclick="addTask()">+ Add task</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="two-col">
+    <!-- Calendar -->
+    <div>
+      <div class="section-title">Calendar</div>
+      <div class="card">
+        <div class="cal-nav">
+          <button onclick="prevMonth()">&#8249;</button>
+          <span class="cal-month" id="cal-month-label"></span>
+          <button onclick="nextMonth()">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--success-text)"></div>Payroll date</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--warning-text)"></div>Q1 deadline</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--info-text)"></div>Today</div>
+        </div>
+        <div class="cal-detail" id="cal-detail">
+          <div class="cal-detail-hint">Click a highlighted date for details.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Goals + Role snapshot -->
+    <div>
+      <div class="section-title">Q1 goals</div>
+      <div class="card">
+        <div class="goal-item">
+          <div class="goal-header">
+            <div class="goal-title">Rolling intern intake pipeline</div>
+            <div class="goal-due">Jun 15</div>
+          </div>
+          <div class="goal-desc">2 intake cycles complete, applicants acknowledged within 3 business days, process runs without Gidget.</div>
+          <div class="progress-row" style="margin-top:8px">
+            <div class="progress-track"><div class="progress-fill blue" id="g1-fill" style="width:10%"></div></div>
+            <input class="prog-input" type="number" min="0" max="100" value="10" oninput="setGoalProg('g1-fill',this.value)" />
+          </div>
+        </div>
+        <div class="goal-item">
+          <div class="goal-header">
+            <div class="goal-title">Modernize onboarding — Phase 1</div>
+            <div class="goal-due">Apr 17</div>
+          </div>
+          <div class="goal-desc">Audit AirTable/Drive materials and propose a free AI-assisted alternative with Ellen and an intern.</div>
+          <div class="progress-row" style="margin-top:8px">
+            <div class="progress-track"><div class="progress-fill amber" id="g2-fill" style="width:5%"></div></div>
+            <input class="prog-input" type="number" min="0" max="100" value="5" oninput="setGoalProg('g2-fill',this.value)" />
+          </div>
+        </div>
+        <div class="goal-item">
+          <div class="goal-header">
+            <div class="goal-title">Modernize onboarding — Phase 2</div>
+            <div class="goal-due">May 16</div>
+          </div>
+          <div class="goal-desc">Working first draft of updated onboarding SOP adapted for free tools, with a longer-term roadmap.</div>
+          <div class="progress-row" style="margin-top:8px">
+            <div class="progress-track"><div class="progress-fill amber" id="g3-fill" style="width:0%"></div></div>
+            <input class="prog-input" type="number" min="0" max="100" value="0" oninput="setGoalProg('g3-fill',this.value)" />
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:0.25rem">Role snapshot</div>
+      <div class="card">
+        <div class="snapshot-row"><span>Rate</span><span class="snapshot-val" style="font-weight:500">$30/hr</span></div>
+        <div class="snapshot-row"><span>Pre-grad hours</span><span class="snapshot-val">10–15 hrs/wk</span></div>
+        <div class="snapshot-row"><span>Summer hours</span><span class="snapshot-val">20–25 hrs/wk</span></div>
+        <div class="snapshot-row"><span>Reports to</span><span class="snapshot-val">Gidget</span></div>
+        <div class="snapshot-row"><span>Work model</span><span class="snapshot-val">Remote / async</span></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:12px;margin-bottom:6px;">Ownership areas</div>
+        <div class="ownership-tags">
+          <span class="tag cat">Intake funnel</span>
+          <span class="tag cat">Onboarding</span>
+          <span class="tag cat">Communications</span>
+          <span class="tag cat">Intern coordination</span>
+          <span class="tag own-payroll">Payroll Research</span>
+          <span class="tag own-conf">Confidentiality Agreements</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Date ─────────────────────────────────────────────────────
+const today = new Date();
+document.getElementById('today-date').textContent = today.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+
+// ── Calendar ──────────────────────────────────────────────────
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+let calYear = today.getFullYear();
+let calMonth = today.getMonth();
+
+const Q1_DEADLINES = {
+  '2026-04-17': 'Goal 2 Phase 1 deadline — onboarding audit due',
+  '2026-05-16': 'Goal 2 Phase 2 deadline — onboarding SOP draft due',
+  '2026-06-15': 'Goal 1 deadline — rolling intake pipeline established',
+};
+
+function biweeklyDates(year) {
+  const dates = new Set();
+  let d = new Date(year, 0, 10);
+  while (d.getFullYear() === year) {
+    dates.add(year+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
+    d.setDate(d.getDate()+14);
+  }
+  return dates;
+}
+
+function renderCal() {
+  document.getElementById('cal-month-label').textContent = MONTHS[calMonth]+' '+calYear;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+    const el = document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el);
+  });
+
+  const payroll = biweeklyDates(calYear);
+  const first = new Date(calYear, calMonth, 1);
+  const startDay = first.getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+
+  for (let i=0;i<startDay;i++) {
+    const el=document.createElement('div'); el.className='cal-day other-month';
+    el.innerHTML=`<div class="day-num">${prevDays-startDay+1+i}</div>`; grid.appendChild(el);
+  }
+  for (let d=1;d<=daysInMonth;d++) {
+    const ds = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday = d===today.getDate()&&calMonth===today.getMonth()&&calYear===today.getFullYear();
+    const isPayroll = payroll.has(ds);
+    const isDeadline = !!Q1_DEADLINES[ds];
+    let cls='cal-day';
+    if(isToday) cls+=' today';
+    if(isPayroll) cls+=' has-payroll';
+    if(isDeadline) cls+=' has-deadline';
+    const el=document.createElement('div'); el.className=cls;
+    let inner=`<div class="day-num">${d}</div>`;
+    if(isPayroll) inner+=`<div class="day-dot dot-payroll"></div>`;
+    if(isDeadline) inner+=`<div class="day-dot dot-deadline"></div>`;
+    el.innerHTML=inner;
+    if(isPayroll||isDeadline) el.onclick=()=>showDetail(ds,isPayroll,Q1_DEADLINES[ds]);
+    grid.appendChild(el);
+  }
+  const total=startDay+daysInMonth;
+  const rem=total%7===0?0:7-(total%7);
+  for(let i=1;i<=rem;i++){
+    const el=document.createElement('div'); el.className='cal-day other-month';
+    el.innerHTML=`<div class="day-num">${i}</div>`; grid.appendChild(el);
+  }
+}
+
+function showDetail(ds, isPayroll, deadlineLabel) {
+  const d=new Date(ds+'T00:00:00');
+  const fmt=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  let html=`<div class="cal-detail-date">${fmt}</div>`;
+  if(isPayroll) html+=`<div class="cal-detail-item"><div class="day-dot dot-payroll" style="flex-shrink:0"></div><span>Payroll processing date (biweekly, standard US)</span></div>`;
+  if(deadlineLabel) html+=`<div class="cal-detail-item"><div class="day-dot dot-deadline" style="flex-shrink:0"></div><span>${deadlineLabel}</span></div>`;
+  document.getElementById('cal-detail').innerHTML=html;
+}
+
+function resetDetail() {
+  document.getElementById('cal-detail').innerHTML='<div class="cal-detail-hint">Click a highlighted date for details.</div>';
+}
+
+function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();resetDetail();}
+function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();resetDetail();}
+
+renderCal();
+
+// ── Tasks ─────────────────────────────────────────────────────
+let tasks = [
+  {id:1,title:'Reach out to current interns',prio:'high',ownCls:'cat',ownLabel:'Intern coordination',progress:0,notes:'',done:false},
+  {id:2,title:'Reply to Natalie re: correct dates for verification',prio:'high',ownCls:'cat',ownLabel:'Communications',progress:0,notes:'',done:false},
+  {id:3,title:'Create SOP of onboarding procedures',prio:'med',ownCls:'cat',ownLabel:'Onboarding',progress:0,notes:'',done:false},
+];
+let nextId=4;
+let openNotes={};
+const PRIO_LABEL={high:'High',med:'Medium',low:'Low'};
+const FILL_CLS={high:'green',med:'amber',low:'blue'};
+
+function render(){
+  const list=document.getElementById('task-list');
+  if(!tasks.length){list.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 0;">No tasks yet — add one below.</div>';updateMetrics();return;}
+  list.innerHTML=tasks.map(t=>`
+    <div class="task-item" id="ti-${t.id}">
+      <div class="task-row">
+        <div class="task-check ${t.done?'done':''}" onclick="toggleDone(${t.id})"></div>
+        <div class="task-body">
+          <div class="task-title ${t.done?'done':''}">${escHtml(t.title)}</div>
+          <div class="task-meta">
+            <span class="tag priority-${t.prio}">${PRIO_LABEL[t.prio]}</span>
+            <span class="tag ${t.ownCls}">${escHtml(t.ownLabel)}</span>
+          </div>
+          <div class="progress-row">
+            <div class="progress-track"><div class="progress-fill ${FILL_CLS[t.prio]}" style="width:${t.progress}%" id="pf-${t.id}"></div></div>
+            <input class="prog-input" type="number" min="0" max="100" value="${t.progress}" oninput="setProgress(${t.id},this.value)" />
+          </div>
+          <span class="notes-toggle" onclick="toggleNotes(${t.id})">${openNotes[t.id]?'▲ hide notes':'▼ notes'}</span>
+          <div class="task-notes ${openNotes[t.id]?'open':''}">
+            <textarea placeholder="Add notes here..." oninput="saveNote(${t.id},this.value)">${escHtml(t.notes)}</textarea>
+          </div>
+        </div>
+        <div class="remove-btn" onclick="removeTask(${t.id})" title="Remove task">×</div>
+      </div>
+    </div>`).join('');
+  updateMetrics();
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function updateMetrics(){
+  document.getElementById('met-total').textContent=tasks.length;
+  document.getElementById('met-done').textContent=tasks.filter(t=>t.done).length;
+  document.getElementById('met-prog').textContent=tasks.filter(t=>!t.done&&t.progress>0).length;
+}
+function toggleDone(id){const t=tasks.find(t=>t.id===id);if(t){t.done=!t.done;if(t.done)t.progress=100;}render();}
+function setProgress(id,val){const v=Math.min(100,Math.max(0,parseInt(val)||0));const t=tasks.find(t=>t.id===id);if(t){t.progress=v;t.done=v===100;}const el=document.getElementById('pf-'+id);if(el)el.style.width=v+'%';updateMetrics();}
+function toggleNotes(id){openNotes[id]=!openNotes[id];render();}
+function saveNote(id,val){const t=tasks.find(t=>t.id===id);if(t)t.notes=val;}
+function removeTask(id){tasks=tasks.filter(t=>t.id!==id);delete openNotes[id];render();}
+
+function addTask(){
+  const input=document.getElementById('new-task-input');
+  const ownSel=document.getElementById('new-task-own');
+  const prioSel=document.getElementById('new-task-prio');
+  const title=input.value.trim();
+  if(!title)return;
+  const [ownCls,ownLabel]=ownSel.value.split('|');
+  tasks.push({id:nextId++,title,prio:prioSel.value,ownCls,ownLabel,progress:0,notes:'',done:false});
+  input.value='';
+  render();
+}
+
+document.getElementById('new-task-input').addEventListener('keydown',e=>{if(e.key==='Enter')addTask();});
+
+function setGoalProg(fillId,val){
+  const v=Math.min(100,Math.max(0,parseInt(val)||0));
+  const el=document.getElementById(fillId);
+  if(el)el.style.width=v+'%';
+}
+
+render();
+</script>
+</body>
+</html>
