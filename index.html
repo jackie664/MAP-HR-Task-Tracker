@@ -90,14 +90,25 @@
   .tag.cat { background: var(--info-bg); color: var(--info-text); }
   .tag.own-payroll { background: var(--success-bg); color: var(--success-text); }
   .tag.own-conf { background: var(--warning-bg); color: var(--warning-text); }
-  .progress-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-  .progress-track { flex: 1; height: 4px; background: var(--border); border-radius: 999px; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
-  .progress-fill.green { background: var(--success-text); }
-  .progress-fill.amber { background: var(--warning-text); }
-  .progress-fill.blue { background: var(--info-text); }
-  .prog-input { width: 50px; font-size: 12px; padding: 2px 6px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); text-align: center; font-family: inherit; }
+  /* Circle progress */
+  .task-row { align-items: center !important; }
+  .circle-wrap { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .circle-svg { display: block; }
+  .circle-track { fill: none; stroke: var(--border2); stroke-width: 3.5; }
+  .circle-fill { fill: none; stroke-width: 3.5; stroke-linecap: round; transition: stroke-dashoffset 0.4s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
+  .circle-fill.green { stroke: var(--success-text); }
+  .circle-fill.amber { stroke: var(--warning-text); }
+  .circle-fill.blue { stroke: var(--info-text); }
+  .circle-fill.done-fill { stroke: var(--success-text); }
+  .circle-pct { font-size: 11px; color: var(--text2); line-height: 1; }
+  .prog-input { width: 46px; font-size: 12px; padding: 2px 4px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); text-align: center; font-family: inherit; margin-top: 2px; }
   .prog-input:focus { outline: none; border-color: var(--info-border); }
+
+  /* Inline title edit */
+  .task-title { font-size: 14px; font-weight: 500; cursor: text; border-bottom: 1px dashed transparent; transition: border-color 0.15s; display: inline-block; max-width: 100%; }
+  .task-title:hover { border-bottom-color: var(--border2); }
+  .task-title.done { text-decoration: line-through; color: var(--text3); cursor: text; }
+  .task-title-input { font-size: 14px; font-weight: 500; width: 100%; border: none; border-bottom: 1.5px solid var(--info-border); background: transparent; color: var(--text); font-family: inherit; outline: none; padding: 0; margin: 0; }
   .notes-toggle { font-size: 12px; color: var(--info-text); cursor: pointer; margin-top: 4px; display: inline-block; user-select: none; }
   .task-notes { margin-top: 8px; display: none; }
   .task-notes.open { display: block; }
@@ -161,6 +172,16 @@
   .snapshot-row:last-of-type { border-bottom: none; }
   .snapshot-val { color: var(--text); }
   .ownership-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+  /* Save bar */
+  .save-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 8px 14px; margin-bottom: 1.5rem; }
+  .save-status { font-size: 12px; color: var(--text2); }
+  .save-status.saved { color: var(--success-text); }
+  .save-actions { display: flex; gap: 8px; }
+  .save-btn { font-size: 12px; padding: 4px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .save-btn:hover { background: var(--bg3); }
+  .save-btn.primary { background: var(--info-bg); color: var(--info-text); border-color: var(--info-border); }
+  .save-btn.primary:hover { opacity: 0.85; }
 </style>
 </head>
 <body>
@@ -172,6 +193,16 @@
       <p>HR & Intern Coordinator · MyAiPathways (MAP)</p>
     </div>
     <span class="date-badge" id="today-date"></span>
+  </div>
+
+  <!-- Save bar -->
+  <div class="save-bar">
+    <span class="save-status" id="save-status">No saved data yet — changes will auto-save as you work.</span>
+    <div class="save-actions">
+      <button class="save-btn" onclick="exportData()">&#8593; Export backup</button>
+      <label class="save-btn" style="cursor:pointer">&#8595; Import backup<input type="file" accept=".json" onchange="importData(event)" style="display:none"></label>
+      <button class="save-btn" onclick="clearData()">Reset</button>
+    </div>
   </div>
 
   <!-- Metrics -->
@@ -240,7 +271,7 @@
           <div class="goal-desc">2 intake cycles complete, applicants acknowledged within 3 business days, process runs without Gidget.</div>
           <div class="progress-row" style="margin-top:8px">
             <div class="progress-track"><div class="progress-fill blue" id="g1-fill" style="width:10%"></div></div>
-            <input class="prog-input" type="number" min="0" max="100" value="10" oninput="setGoalProg('g1-fill',this.value)" />
+            <input class="prog-input" type="number" min="0" max="100" value="10" data-goal="g1" oninput="setGoalProg('g1','g1-fill',this.value)" />
           </div>
         </div>
         <div class="goal-item">
@@ -251,7 +282,7 @@
           <div class="goal-desc">Audit AirTable/Drive materials and propose a free AI-assisted alternative with Ellen and an intern.</div>
           <div class="progress-row" style="margin-top:8px">
             <div class="progress-track"><div class="progress-fill amber" id="g2-fill" style="width:5%"></div></div>
-            <input class="prog-input" type="number" min="0" max="100" value="5" oninput="setGoalProg('g2-fill',this.value)" />
+            <input class="prog-input" type="number" min="0" max="100" value="5" data-goal="g2" oninput="setGoalProg('g2','g2-fill',this.value)" />
           </div>
         </div>
         <div class="goal-item">
@@ -262,7 +293,7 @@
           <div class="goal-desc">Working first draft of updated onboarding SOP adapted for free tools, with a longer-term roadmap.</div>
           <div class="progress-row" style="margin-top:8px">
             <div class="progress-track"><div class="progress-fill amber" id="g3-fill" style="width:0%"></div></div>
-            <input class="prog-input" type="number" min="0" max="100" value="0" oninput="setGoalProg('g3-fill',this.value)" />
+            <input class="prog-input" type="number" min="0" max="100" value="0" data-goal="g3" oninput="setGoalProg('g3','g3-fill',this.value)" />
           </div>
         </div>
       </div>
@@ -376,43 +407,191 @@ function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal(
 
 renderCal();
 
-// ── Tasks ─────────────────────────────────────────────────────
-let tasks = [
+// ── Default data ──────────────────────────────────────────────
+const DEFAULT_TASKS = [
   {id:1,title:'Reach out to current interns',prio:'high',ownCls:'cat',ownLabel:'Intern coordination',progress:0,notes:'',done:false},
   {id:2,title:'Reply to Natalie re: correct dates for verification',prio:'high',ownCls:'cat',ownLabel:'Communications',progress:0,notes:'',done:false},
   {id:3,title:'Create SOP of onboarding procedures',prio:'med',ownCls:'cat',ownLabel:'Onboarding',progress:0,notes:'',done:false},
 ];
-let nextId=4;
-let openNotes={};
+const DEFAULT_GOALS = {g1:10,g2:5,g3:0};
+
+let tasks = [];
+let nextId = 4;
+let openNotes = {};
+let goalProgress = {...DEFAULT_GOALS};
+
 const PRIO_LABEL={high:'High',med:'Medium',low:'Low'};
 const FILL_CLS={high:'green',med:'amber',low:'blue'};
+const STORAGE_KEY = 'jackie_hr_dashboard_v1';
+
+// ── Persistence ───────────────────────────────────────────────
+function saveState() {
+  const state = {
+    tasks,
+    nextId,
+    goalProgress,
+    savedAt: new Date().toISOString()
+  };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const d = new Date();
+    const t = d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    const s = document.getElementById('save-status');
+    s.textContent = 'Auto-saved at ' + t;
+    s.className = 'save-status saved';
+  } catch(e) {
+    document.getElementById('save-status').textContent = 'Could not save — storage may be restricted.';
+  }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+      goalProgress = {...DEFAULT_GOALS};
+      return;
+    }
+    const state = JSON.parse(raw);
+    tasks = state.tasks || JSON.parse(JSON.stringify(DEFAULT_TASKS));
+    nextId = state.nextId || (Math.max(...tasks.map(t=>t.id), 0) + 1);
+    goalProgress = state.goalProgress || {...DEFAULT_GOALS};
+    const d = new Date(state.savedAt);
+    const fmt = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' at ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    const s = document.getElementById('save-status');
+    s.textContent = 'Last saved ' + fmt;
+    s.className = 'save-status saved';
+  } catch(e) {
+    tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+    goalProgress = {...DEFAULT_GOALS};
+  }
+}
+
+function exportData() {
+  const state = { tasks, nextId, goalProgress, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'jackie_dashboard_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const state = JSON.parse(ev.target.result);
+      tasks = state.tasks || [];
+      nextId = state.nextId || (Math.max(...tasks.map(t=>t.id), 0) + 1);
+      goalProgress = state.goalProgress || {...DEFAULT_GOALS};
+      saveState();
+      render();
+      applyGoalProgress();
+      alert('Backup restored successfully.');
+    } catch(err) {
+      alert('Could not read backup file. Make sure it is a valid exported backup.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function clearData() {
+  if (!confirm('Reset everything to defaults? This cannot be undone.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+  nextId = 4;
+  openNotes = {};
+  goalProgress = {...DEFAULT_GOALS};
+  const s = document.getElementById('save-status');
+  s.textContent = 'Reset to defaults.';
+  s.className = 'save-status';
+  render();
+  applyGoalProgress();
+}
+
+function applyGoalProgress() {
+  ['g1','g2','g3'].forEach(g => {
+    const v = goalProgress[g] || 0;
+    const fill = document.getElementById(g+'-fill');
+    if (fill) fill.style.width = v + '%';
+    const input = document.querySelector(`input[data-goal="${g}"]`);
+    if (input) input.value = v;
+  });
+}
+
+// ── Tasks ─────────────────────────────────────────────────────
+const CIRC = 2 * Math.PI * 16; // circumference for r=16
+
+function circleHTML(id, pct, fillCls) {
+  const done = pct >= 100;
+  const offset = CIRC * (1 - pct / 100);
+  const cls = done ? 'done-fill' : fillCls;
+  return `
+    <div class="circle-wrap">
+      <svg class="circle-svg" width="44" height="44" viewBox="0 0 44 44">
+        <circle class="circle-track" cx="22" cy="22" r="16"/>
+        <circle class="circle-fill ${cls}" id="cf-${id}" cx="22" cy="22" r="16"
+          stroke-dasharray="${CIRC.toFixed(2)}"
+          stroke-dashoffset="${offset.toFixed(2)}"/>
+        <text x="22" y="22" text-anchor="middle" dominant-baseline="central"
+          style="font-size:10px;font-weight:500;fill:var(--text);font-family:inherit" id="cpct-${id}">${Math.round(pct)}%</text>
+      </svg>
+      <input class="prog-input" type="number" min="0" max="100" value="${Math.round(pct)}"
+        oninput="setProgress(${id}, this.value)" style="width:44px" />
+    </div>`;
+}
 
 function render(){
   const list=document.getElementById('task-list');
   if(!tasks.length){list.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 0;">No tasks yet — add one below.</div>';updateMetrics();return;}
   list.innerHTML=tasks.map(t=>`
     <div class="task-item" id="ti-${t.id}">
-      <div class="task-row">
-        <div class="task-check ${t.done?'done':''}" onclick="toggleDone(${t.id})"></div>
-        <div class="task-body">
-          <div class="task-title ${t.done?'done':''}">${escHtml(t.title)}</div>
-          <div class="task-meta">
+      <div class="task-row" style="gap:12px;align-items:center">
+        <div class="task-check ${t.done?'done':''}" onclick="toggleDone(${t.id})" style="flex-shrink:0;margin-top:0"></div>
+        <div class="task-body" style="flex:1;min-width:0">
+          <div id="title-wrap-${t.id}">
+            <span class="task-title ${t.done?'done':''}" onclick="startEditTitle(${t.id})" title="Click to edit">${escHtml(t.title)}</span>
+          </div>
+          <div class="task-meta" style="margin-top:4px">
             <span class="tag priority-${t.prio}">${PRIO_LABEL[t.prio]}</span>
             <span class="tag ${t.ownCls}">${escHtml(t.ownLabel)}</span>
-          </div>
-          <div class="progress-row">
-            <div class="progress-track"><div class="progress-fill ${FILL_CLS[t.prio]}" style="width:${t.progress}%" id="pf-${t.id}"></div></div>
-            <input class="prog-input" type="number" min="0" max="100" value="${t.progress}" oninput="setProgress(${t.id},this.value)" />
           </div>
           <span class="notes-toggle" onclick="toggleNotes(${t.id})">${openNotes[t.id]?'▲ hide notes':'▼ notes'}</span>
           <div class="task-notes ${openNotes[t.id]?'open':''}">
             <textarea placeholder="Add notes here..." oninput="saveNote(${t.id},this.value)">${escHtml(t.notes)}</textarea>
           </div>
         </div>
+        ${circleHTML(t.id, t.progress, FILL_CLS[t.prio])}
         <div class="remove-btn" onclick="removeTask(${t.id})" title="Remove task">×</div>
       </div>
     </div>`).join('');
   updateMetrics();
+}
+
+function startEditTitle(id) {
+  const t = tasks.find(t=>t.id===id);
+  if (!t) return;
+  const wrap = document.getElementById('title-wrap-'+id);
+  wrap.innerHTML = `<input class="task-title-input" id="title-input-${id}" type="text" value="${escHtml(t.title)}" maxlength="120" />`;
+  const input = document.getElementById('title-input-'+id);
+  input.focus();
+  input.select();
+  input.addEventListener('blur', () => commitEditTitle(id, input.value));
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { input.blur(); }
+    if (e.key === 'Escape') { render(); }
+  });
+}
+
+function commitEditTitle(id, val) {
+  const t = tasks.find(t=>t.id===id);
+  const trimmed = val.trim();
+  if (t && trimmed) { t.title = trimmed; saveState(); }
+  render();
 }
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -421,11 +600,20 @@ function updateMetrics(){
   document.getElementById('met-done').textContent=tasks.filter(t=>t.done).length;
   document.getElementById('met-prog').textContent=tasks.filter(t=>!t.done&&t.progress>0).length;
 }
-function toggleDone(id){const t=tasks.find(t=>t.id===id);if(t){t.done=!t.done;if(t.done)t.progress=100;}render();}
-function setProgress(id,val){const v=Math.min(100,Math.max(0,parseInt(val)||0));const t=tasks.find(t=>t.id===id);if(t){t.progress=v;t.done=v===100;}const el=document.getElementById('pf-'+id);if(el)el.style.width=v+'%';updateMetrics();}
+function toggleDone(id){const t=tasks.find(t=>t.id===id);if(t){t.done=!t.done;if(t.done)t.progress=100;else t.progress=0;}render();saveState();}
+function setProgress(id,val){
+  const v=Math.min(100,Math.max(0,parseInt(val)||0));
+  const t=tasks.find(t=>t.id===id);
+  if(t){t.progress=v;t.done=v===100;}
+  const cf=document.getElementById('cf-'+id);
+  const cpct=document.getElementById('cpct-'+id);
+  if(cf){const offset=CIRC*(1-v/100);cf.setAttribute('stroke-dashoffset',offset.toFixed(2));}
+  if(cpct){cpct.textContent=v+'%';}
+  updateMetrics();saveState();
+}
 function toggleNotes(id){openNotes[id]=!openNotes[id];render();}
-function saveNote(id,val){const t=tasks.find(t=>t.id===id);if(t)t.notes=val;}
-function removeTask(id){tasks=tasks.filter(t=>t.id!==id);delete openNotes[id];render();}
+function saveNote(id,val){const t=tasks.find(t=>t.id===id);if(t)t.notes=val;saveState();}
+function removeTask(id){tasks=tasks.filter(t=>t.id!==id);delete openNotes[id];render();saveState();}
 
 function addTask(){
   const input=document.getElementById('new-task-input');
@@ -437,17 +625,23 @@ function addTask(){
   tasks.push({id:nextId++,title,prio:prioSel.value,ownCls,ownLabel,progress:0,notes:'',done:false});
   input.value='';
   render();
+  saveState();
 }
 
 document.getElementById('new-task-input').addEventListener('keydown',e=>{if(e.key==='Enter')addTask();});
 
-function setGoalProg(fillId,val){
+function setGoalProg(goalKey, fillId, val){
   const v=Math.min(100,Math.max(0,parseInt(val)||0));
   const el=document.getElementById(fillId);
   if(el)el.style.width=v+'%';
+  goalProgress[goalKey]=v;
+  saveState();
 }
 
+// ── Init ──────────────────────────────────────────────────────
+loadState();
 render();
+applyGoalProgress();
 </script>
 </body>
 </html>
